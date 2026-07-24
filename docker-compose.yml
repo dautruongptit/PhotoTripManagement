@@ -1,0 +1,13 @@
+services:
+  phototrip:
+    build: .
+    container_name: phototrip-app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    networks:
+      - dev-network
+
+networks:
+  dev-network:
+    external: true
