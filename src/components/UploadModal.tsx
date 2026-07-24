@@ -75,6 +75,18 @@ export default function UploadModal({ existingPhotoNames, onClose, onUploaded }:
     setEntries((prev) => prev.map((e) => e.id === id ? { ...e, duplicateAction: action, newName } : e));
   };
 
+  const setActionForAllDuplicates = (action: 'skip' | 'rename' | 'replace') => {
+    setEntries((prev) => prev.map((e) => {
+      if (!e.isDuplicate || e.duplicateAction) return e;
+      if (action === 'rename') {
+        const base = e.file.name.replace(/(\.[^.]+)$/, '');
+        const ext = e.file.name.match(/(\.[^.]+)$/)?.[1] || '';
+        return { ...e, duplicateAction: 'rename', newName: `${base}_copy${ext}` };
+      }
+      return { ...e, duplicateAction: action };
+    }));
+  };
+
   const removeEntry = (id: string) => {
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
@@ -181,6 +193,33 @@ export default function UploadModal({ existingPhotoNames, onClose, onUploaded }:
         {/* File list */}
         {entries.length > 0 && (
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2 min-h-0">
+            {!isUploading && !done && (
+              <div className="flex items-center justify-between gap-2 pb-1">
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:underline"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  Chọn thêm ảnh
+                </button>
+                {duplicateCount > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">Áp dụng cho tất cả trùng tên:</span>
+                    {(['skip', 'rename', 'replace'] as const).map((action) => (
+                      <button
+                        key={action}
+                        onClick={() => setActionForAllDuplicates(action)}
+                        className="px-2 py-1 rounded-lg text-xs font-medium border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600"
+                      >
+                        {action === 'skip' ? 'Bỏ qua' : action === 'rename' ? 'Đổi tên' : 'Ghi đè'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {entries.map((entry) => (
               <div key={entry.id} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800">
                 {/* Thumb */}

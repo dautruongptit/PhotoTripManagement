@@ -35,5 +35,17 @@ export interface ToastItem {
   message: string;
 }
 
-export type AppView = 'login' | 'dashboard' | 'album';
+export interface StoragePlan {
+  id: string;
+  durationMonths: 1 | 3 | 6 | 12;
+  label: string;
+  storageGB: number;
+  pricePerMonth: number; // VNĐ/tháng đã áp ưu đãi
+  originalPricePerMonth: number; // VNĐ/tháng gốc (chưa giảm)
+  totalPrice: number; // VNĐ, thanh toán 1 lần cho cả kỳ
+  discountPercent: number;
+  badge?: string;
+}
+
+export type AppView = 'login' | 'dashboard' | 'album' | 'help';
 export type SortOption = 'newest' | 'oldest' | 'name-az' | 'name-za';

@@ -40,5 +40,9 @@ export const formatTimeAgo = (dateString: string): string => {
 
 export const generateId = (): string => Math.random().toString(36).slice(2, 11);
 
+export const formatCurrency = (vnd: number): string =>
+  vnd.toLocaleString('vi-VN') + '₫';
+
 export const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic'];
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+export const FREE_STORAGE_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB miễn phí

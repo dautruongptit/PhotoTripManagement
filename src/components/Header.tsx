@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { User } from '../types';
+import { formatTotalSize } from '../utils';
 
 interface Props {
   user: User | null;
@@ -10,11 +11,21 @@ interface Props {
   showSearch?: boolean;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  usedBytes: number;
+  limitBytes: number;
+  onOpenProfile: () => void;
+  onOpenSettings: () => void;
+  onOpenHelp: () => void;
+  onOpenUpgrade: () => void;
 }
 
-export default function Header({ user, onLogout, onGoHome, searchQuery, onSearchChange, showSearch = true, theme, onToggleTheme }: Props) {
+export default function Header({
+  user, onLogout, onGoHome, searchQuery, onSearchChange, showSearch = true,
+  theme, onToggleTheme, usedBytes, limitBytes, onOpenProfile, onOpenSettings, onOpenHelp, onOpenUpgrade,
+}: Props) {
   const [profileOpen, setProfileOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
+  const usedPercent = Math.min(100, Math.round((usedBytes / limitBytes) * 100));
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -110,23 +121,50 @@ export default function Header({ user, onLogout, onGoHome, searchQuery, onSearch
             </button>
 
             {profileOpen && (
-              <div className="slide-up absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden z-50">
+              <div className="slide-up absolute right-0 top-full mt-2 w-72 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden z-50">
                 <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-800">
                   <div className="flex items-center gap-3">
                     <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{user.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
                     </div>
+                  </div>
+
+                  {/* Storage usage */}
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 mb-1">
+                      <span>{formatTotalSize(usedBytes)} / {formatTotalSize(limitBytes)}</span>
+                      <span>{usedPercent}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${usedPercent >= 90 ? 'bg-red-500' : usedPercent >= 70 ? 'bg-yellow-500' : 'bg-blue-500'}`}
+                        style={{ width: `${usedPercent}%` }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => { setProfileOpen(false); onOpenUpgrade(); }}
+                      className="mt-2 w-full py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" fill="currentColor"/>
+                      </svg>
+                      Nâng cấp tài khoản
+                    </button>
                   </div>
                 </div>
                 <div className="py-2">
                   {[
-                    { icon: '👤', label: 'Hồ sơ của tôi' },
-                    { icon: '⚙️', label: 'Cài đặt' },
-                    { icon: '❓', label: 'Trợ giúp' },
-                  ].map(({ icon, label }) => (
-                    <button key={label} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
+                    { icon: '👤', label: 'Hồ sơ của tôi', onClick: onOpenProfile },
+                    { icon: '⚙️', label: 'Cài đặt', onClick: onOpenSettings },
+                    { icon: '❓', label: 'Trợ giúp', onClick: onOpenHelp },
+                  ].map(({ icon, label, onClick }) => (
+                    <button
+                      key={label}
+                      onClick={() => { setProfileOpen(false); onClick(); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+                    >
                       <span>{icon}</span>
                       {label}
                     </button>
