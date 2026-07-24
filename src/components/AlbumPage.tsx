@@ -66,10 +66,10 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
   return (
     <main className="min-h-screen">
       {/* Breadcrumb + event header */}
-      <div className="bg-white border-b border-gray-100">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
             <button onClick={onBack} className="hover:text-blue-600 transition-colors flex items-center gap-1.5">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -77,20 +77,20 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
               Trang chủ
             </button>
             <span>/</span>
-            <span className="text-gray-900 font-medium">{event.name}</span>
+            <span className="text-gray-900 dark:text-white font-medium">{event.name}</span>
           </div>
 
           {/* Event info */}
           <div className="flex items-start gap-5">
-            <div className="hidden sm:block w-20 h-20 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0">
+            <div className="hidden sm:block w-20 h-20 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
               <img src={event.coverImage} alt={event.name} className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{event.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{event.name}</h1>
               {event.description && (
-                <p className="text-gray-500 text-sm mt-1 line-clamp-2 max-w-xl">{event.description}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 line-clamp-2 max-w-xl">{event.description}</p>
               )}
-              <div className="flex flex-wrap items-center gap-4 mt-2.5 text-xs text-gray-500">
+              <div className="flex flex-wrap items-center gap-4 mt-2.5 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="currentColor" opacity=".3"/>
@@ -140,7 +140,7 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           {/* Search */}
           <div className="relative flex-1 min-w-48 max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" width="15" height="15" viewBox="0 0 24 24" fill="none">
               <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
               <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
@@ -149,10 +149,10 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               placeholder="Tìm tên ảnh…"
-              className="w-full h-9 pl-9 pr-8 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+              className="w-full h-9 pl-9 pr-8 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-400 focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/40 transition-all"
             />
             {filterQuery && (
-              <button onClick={() => setFilterQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-base leading-none">×</button>
+              <button onClick={() => setFilterQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-base leading-none">×</button>
             )}
           </div>
 
@@ -160,7 +160,7 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
           <div className="relative" ref={sortRef}>
             <button
               onClick={() => setShowSortMenu((v) => !v)}
-              className="flex items-center gap-1.5 h-9 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-blue-300 transition-colors"
+              className="flex items-center gap-1.5 h-9 px-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:border-blue-300 transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M3 6h18M7 12h10M11 18h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -168,12 +168,12 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
               {SORT_LABELS[sort]}
             </button>
             {showSortMenu && (
-              <div className="slide-up absolute right-0 top-full mt-1 w-40 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-20">
+              <div className="slide-up absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 py-1 z-20">
                 {(Object.keys(SORT_LABELS) as SortOption[]).map((s) => (
                   <button
                     key={s}
                     onClick={() => { setSort(s); setShowSortMenu(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${sort === s ? 'text-blue-600 font-medium bg-blue-50' : 'text-gray-700 hover:bg-gray-50'}`}
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${sort === s ? 'text-blue-600 font-medium bg-blue-50 dark:bg-blue-950/40' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                   >
                     {SORT_LABELS[s]}
                   </button>
@@ -185,7 +185,7 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
           {photos.length > 0 && (
             <button
               onClick={selected.size === photos.length ? clearSelect : selectAll}
-              className="h-9 px-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-blue-300 transition-colors"
+              className="h-9 px-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:border-blue-300 transition-colors"
             >
               {selected.size === photos.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
             </button>
@@ -195,17 +195,17 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
         {/* Empty state */}
         {photos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
-            <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mb-5">
+            <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-3xl flex items-center justify-center mb-5">
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="3" width="18" height="18" rx="3" stroke="#D1D5DB" strokeWidth="1.5"/>
                 <circle cx="8.5" cy="8.5" r="1.5" fill="#D1D5DB"/>
                 <path d="M21 15l-5-5L5 21" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               {q ? 'Không tìm thấy ảnh' : 'Chưa có ảnh nào'}
             </h3>
-            <p className="text-gray-500 text-sm mb-6">
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
               {q ? `Không có ảnh nào khớp với "${q}".` : 'Tải ảnh lên để bắt đầu lưu giữ kỷ niệm chuyến đi này.'}
             </p>
             {user && !q && (
@@ -278,13 +278,13 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="slide-up relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Xác nhận xóa</h3>
-            <p className="text-gray-600 text-sm mb-5">
+          <div className="slide-up relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Xác nhận xóa</h3>
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-5">
               Bạn có chắc muốn xóa <strong>{selected.size} ảnh</strong> đã chọn? Hành động này không thể hoàn tác.
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 Hủy
               </button>
               <button onClick={handleDelete} className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-sm font-semibold text-white transition-colors">
@@ -308,7 +308,7 @@ interface PhotoItemProps {
 function PhotoItem({ photo, selected, onSelect, onClick }: PhotoItemProps) {
   return (
     <div
-      className={`photo-item relative group cursor-pointer rounded-xl overflow-hidden bg-gray-100 ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+      className={`photo-item relative group cursor-pointer rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
       onClick={onClick}
     >
       <img

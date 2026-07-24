@@ -13,10 +13,10 @@ export default function EventCard({ event, onClick }: Props) {
   return (
     <article
       onClick={onClick}
-      className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+      className="group bg-white dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
     >
       {/* Cover */}
-      <div className="relative overflow-hidden bg-gray-100" style={{ aspectRatio: '16/10' }}>
+      <div className="relative overflow-hidden bg-gray-100 dark:bg-gray-800" style={{ aspectRatio: '16/10' }}>
         <img
           src={event.coverImage}
           alt={event.name}
@@ -41,7 +41,7 @@ export default function EventCard({ event, onClick }: Props) {
       {/* Body */}
       <div className="p-4">
         {/* Location */}
-        <div className="flex items-center gap-1.5 text-gray-500 text-xs mb-2">
+        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-xs mb-2">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="currentColor"/>
             <circle cx="12" cy="9" r="2.5" fill="white"/>
@@ -51,12 +51,12 @@ export default function EventCard({ event, onClick }: Props) {
 
         {/* Description */}
         {event.description && (
-          <p className="text-gray-600 text-sm leading-relaxed line-clamp-2 mb-3">{event.description}</p>
+          <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-2 mb-3">{event.description}</p>
         )}
 
         {/* Meta */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div className="flex items-center gap-1 text-xs text-gray-400">
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
               <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
               <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -65,7 +65,7 @@ export default function EventCard({ event, onClick }: Props) {
             </svg>
             <span>{formatDateRange(event.startDate, event.endDate)}</span>
           </div>
-          <span className="text-xs text-gray-400">{formatTimeAgo(event.createdAt)}</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{formatTimeAgo(event.createdAt)}</span>
         </div>
       </div>
     </article>

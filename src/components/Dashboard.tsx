@@ -12,7 +12,7 @@ interface Props {
 
 const EmptyEvents = ({ onCreateEvent }: { onCreateEvent: () => void }) => (
   <div className="flex flex-col items-center justify-center py-32 text-center">
-    <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center mb-6">
+    <div className="w-24 h-24 bg-blue-50 dark:bg-blue-950/40 rounded-3xl flex items-center justify-center mb-6">
       <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
         <rect x="3" y="3" width="18" height="18" rx="3" stroke="#93C5FD" strokeWidth="1.5"/>
         <circle cx="8.5" cy="8.5" r="1.5" fill="#93C5FD"/>
@@ -21,8 +21,8 @@ const EmptyEvents = ({ onCreateEvent }: { onCreateEvent: () => void }) => (
         <path d="M18 16v4M16 18h4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
       </svg>
     </div>
-    <h3 className="text-xl font-semibold text-gray-900 mb-2">Chưa có sự kiện nào</h3>
-    <p className="text-gray-500 text-sm max-w-xs mb-8 leading-relaxed">
+    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Chưa có sự kiện nào</h3>
+    <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mb-8 leading-relaxed">
       Tạo sự kiện đầu tiên để bắt đầu lưu giữ những kỷ niệm đẹp từ chuyến đi của bạn.
     </p>
     <button
@@ -59,10 +59,10 @@ export default function Dashboard({ user, events, searchQuery, onOpenEvent, onCr
       {/* Greeting */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             {greeting()}, {user.name.split(' ').pop()} 👋
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Quản lý và chia sẻ album ảnh du lịch của bạn</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Quản lý và chia sẻ album ảnh du lịch của bạn</p>
         </div>
         <button
           onClick={onCreateEvent}
@@ -79,19 +79,19 @@ export default function Dashboard({ user, events, searchQuery, onOpenEvent, onCr
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {[
           { label: 'Sự kiện', value: events.length, icon: '🗺️', color: 'bg-purple-50 text-purple-600' },
-          { label: 'Tổng ảnh', value: totalPhotos, icon: '📸', color: 'bg-blue-50 text-blue-600' },
+          { label: 'Tổng ảnh', value: totalPhotos, icon: '📸', color: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600' },
           { label: 'Dung lượng', value: formatTotalSize(totalSize), icon: '💾', color: 'bg-green-50 text-green-600' },
           { label: 'Ảnh tuần này', value: allPhotos.filter(p => {
             const d = new Date(p.uploadedAt);
             return Date.now() - d.getTime() < 7 * 86400000;
           }).length, icon: '🆕', color: 'bg-orange-50 text-orange-600' },
         ].map(({ label, value, icon, color }) => (
-          <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div key={label} className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-3 ${color.split(' ')[0]}`}>
               {icon}
             </div>
-            <p className="text-2xl font-bold text-gray-900 tracking-tight">{value}</p>
-            <p className="text-sm text-gray-500 mt-0.5">{label}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{value}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{label}</p>
           </div>
         ))}
       </div>
@@ -99,12 +99,12 @@ export default function Dashboard({ user, events, searchQuery, onOpenEvent, onCr
       {/* Recent Photos */}
       {recentPhotos.length > 0 && !searchQuery && (
         <section className="mb-10">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Ảnh mới nhất</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Ảnh mới nhất</h2>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
             {recentPhotos.map((ph) => (
               <div
                 key={ph.id}
-                className="group relative rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
+                className="group relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 cursor-pointer"
                 style={{ aspectRatio: '1' }}
               >
                 <img
@@ -126,16 +126,16 @@ export default function Dashboard({ user, events, searchQuery, onOpenEvent, onCr
       {/* Events */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-gray-900">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
             {searchQuery ? `Kết quả cho "${searchQuery}"` : 'Tất cả sự kiện'}
-            <span className="ml-2 text-sm font-normal text-gray-400">({filtered.length})</span>
+            <span className="ml-2 text-sm font-normal text-gray-400 dark:text-gray-500">({filtered.length})</span>
           </h2>
         </div>
 
         {filtered.length === 0 ? (
           searchQuery ? (
             <div className="py-20 text-center">
-              <p className="text-gray-400 text-sm">Không tìm thấy sự kiện phù hợp.</p>
+              <p className="text-gray-400 dark:text-gray-500 text-sm">Không tìm thấy sự kiện phù hợp.</p>
             </div>
           ) : (
             <EmptyEvents onCreateEvent={onCreateEvent} />

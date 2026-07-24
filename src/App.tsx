@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { AppView, TravelEvent, ToastItem, Photo } from './types';
 import { mockUser, mockEvents } from './mockData';
 import { generateId } from './utils';
+import { useTheme } from './hooks/useTheme';
 
 import LoginPage from './components/LoginPage';
 import Header from './components/Header';
@@ -13,6 +14,7 @@ import UploadModal from './components/UploadModal';
 import Toast from './components/Toast';
 
 export default function App() {
+  const { theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<typeof mockUser | null>(null);
   const [view, setView] = useState<AppView>('login');
   const [events, setEvents] = useState<TravelEvent[]>(mockEvents);
@@ -94,10 +96,10 @@ export default function App() {
     : -1;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Login page has its own layout */}
       {view === 'login' ? (
-        <LoginPage onLogin={handleLogin} />
+        <LoginPage onLogin={handleLogin} theme={theme} onToggleTheme={toggleTheme} />
       ) : (
         <>
           <Header
@@ -107,6 +109,8 @@ export default function App() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             showSearch={view === 'dashboard' || view === 'album'}
+            theme={theme}
+            onToggleTheme={toggleTheme}
           />
 
           {view === 'dashboard' && (
