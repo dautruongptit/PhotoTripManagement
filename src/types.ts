@@ -47,5 +47,11 @@ export interface StoragePlan {
   badge?: string;
 }
 
+export interface PaymentOrder {
+  orderId: string;
+  planId: string;
+  amount: number; // VNĐ
+}
+
 export type AppView = 'login' | 'dashboard' | 'album' | 'help';
 export type SortOption = 'newest' | 'oldest' | 'name-az' | 'name-za';

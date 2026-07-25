@@ -93,3 +93,62 @@ location /api/ {
 Khi đó set `VITE_API_BASE_URL=/api` (đường dẫn tương đối) thay vì URL đầy đủ, và thêm
 service backend vào `docker-compose.yml`, cùng `dev-network` với `phototrip`.
 
+---
+
+# Tích hợp thanh toán VNPay (nâng cấp dung lượng)
+
+Frontend hiện có 2 chế độ, đổi bằng `VITE_PAYMENT_MODE` trong `.env`:
+- `mock` (mặc định): mô phỏng toàn bộ màn hình VNPay ngay trong trình duyệt, KHÔNG gọi
+  backend — dùng để dựng UI khi chưa có tài khoản merchant VNPay thật.
+- `real`: gọi backend theo contract bên dưới, chuyển hướng (redirect) toàn trang sang
+  VNPay thật.
+
+## Đăng ký tài khoản merchant VNPay
+
+1. Đăng ký tài khoản thử nghiệm (sandbox) tại https://sandbox.vnpayment.vn/devreg/
+2. Lấy `vnp_TmnCode` (mã website) và `vnp_HashSecret` (secret key) — điền vào
+   `application.yml` (xem `application.yml.snippet`).
+3. Merchant thật (production) cần đăng ký chính thức với VNPay, có hợp đồng.
+
+## 3 endpoint cần thêm vào backend
+
+### 1. `POST /api/payments/vnpay/create-payment`
+Request: `{ "planId": "plan-6m" }`
+Response: `{ "paymentUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?...", "orderId": "PT..." }`
+
+Backend tạo `orderId`, lưu đơn hàng trạng thái `PENDING` vào DB, dùng
+`VnpayService.createPaymentUrl(...)` để build URL có chữ ký HMAC-SHA512 (bắt buộc làm
+ở backend vì cần `hash-secret`, không được lộ ra frontend). Frontend nhận `paymentUrl`
+rồi `window.location.href = paymentUrl` — theo đúng yêu cầu kỹ thuật của VNPay (không
+dùng iframe/popup).
+
+### 2. `GET /api/payments/vnpay/return?vnp_...`
+VNPay redirect trình duyệt người dùng về `vnp.return-url` (đã khai báo lúc tạo link)
+kèm theo query string. Trang FE tại route đó gọi nguyên văn endpoint này (forward cả
+query string) để lấy kết quả hiển thị cho người dùng ngay. Chỉ dùng để HIỂN THỊ —
+không phải nguồn xác nhận cuối cùng để cộng dung lượng (xem mục IPN bên dưới).
+
+### 3. `GET /api/payments/vnpay/ipn?vnp_...` (quan trọng nhất)
+Khai báo URL này trong hồ sơ merchant trên cổng VNPay ("Instant Payment Notification").
+VNPay gọi **trực tiếp server-to-server**, độc lập với trình duyệt người dùng — kể cả
+khi người dùng tắt trình duyệt giữa chừng, đơn hàng vẫn được xác nhận đúng. Đây là nơi
+DUY NHẤT nên thực sự cộng dung lượng lưu trữ cho user (nhớ xử lý idempotent — kiểm tra
+đơn hàng đã xử lý hay chưa trước khi cộng, tránh cộng trùng nếu VNPay gọi lại nhiều lần).
+
+**Lưu ý khi dev:** endpoint IPN phải public ra internet được — dùng ngrok hoặc
+Cloudflare Tunnel (bạn đã có sẵn cách dùng Cloudflare Tunnel từ trước) để VNPay gọi được
+vào máy dev/server nhà bạn.
+
+## Ráp vào project
+
+Copy `VnpayService.java`, `VnpayController.java` vào package thật, nối
+`OrderRepository`/`PlanPricingService` (2 interface placeholder trong file) với bảng
+đơn hàng + gói cước thật trong Oracle DB của bạn. Thêm cấu hình `vnpay.*` vào
+`application.yml`.
+
+Khi FE ở chế độ `real`, cần thêm 1 route/trang tại đúng path đã khai báo trong
+`vnp.return-url` (vd `/payment/vnpay-return`) để đọc query string và gọi
+`verifyVnpayReturn()` từ `src/lib/paymentApi.ts` — hiện App.tsx đã xử lý sẵn logic này
+ở mức gốc (`window.location.search`), bạn chỉ cần đảm bảo `return-url` trỏ đúng về
+domain frontend deploy thật.
+

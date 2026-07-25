@@ -5,19 +5,29 @@ import { formatFileSize, formatDate } from '../utils';
 interface Props {
   photos: Photo[];
   initialIndex: number;
+  location?: string;
+  photographerName?: string;
+  selected: Set<string>;
+  onToggleSelect: (id: string) => void;
   onClose: () => void;
 }
 
-export default function Lightbox({ photos, initialIndex, onClose }: Props) {
+const ZOOM_LEVELS = [1, 1.5, 2, 2.5];
+
+export default function Lightbox({ photos, initialIndex, location, photographerName, selected, onToggleSelect, onClose }: Props) {
   const [index, setIndex] = useState(initialIndex);
-  const [zoomed, setZoomed] = useState(false);
+  const [zoomStep, setZoomStep] = useState(0);
   const [showInfo, setShowInfo] = useState(true);
   const stripRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number>(0);
   const photo = photos[index];
+  const isSelected = selected.has(photo.id);
+  const zoomed = zoomStep > 0;
 
-  const prev = useCallback(() => { setZoomed(false); setIndex((i) => Math.max(0, i - 1)); }, []);
-  const next = useCallback(() => { setZoomed(false); setIndex((i) => Math.min(photos.length - 1, i + 1)); }, [photos.length]);
+  const prev = useCallback(() => { setZoomStep(0); setIndex((i) => Math.max(0, i - 1)); }, []);
+  const next = useCallback(() => { setZoomStep(0); setIndex((i) => Math.min(photos.length - 1, i + 1)); }, [photos.length]);
+  const zoomIn = () => setZoomStep((z) => Math.min(ZOOM_LEVELS.length - 1, z + 1));
+  const zoomOut = () => setZoomStep((z) => Math.max(0, z - 1));
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -25,9 +35,12 @@ export default function Lightbox({ photos, initialIndex, onClose }: Props) {
       else if (e.key === 'ArrowRight') next();
       else if (e.key === 'Escape') onClose();
       else if (e.key === 'i') setShowInfo((v) => !v);
+      else if (e.key === '+' || e.key === '=') zoomIn();
+      else if (e.key === '-') zoomOut();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prev, next, onClose]);
 
   // Scroll thumbnail strip to active thumb
@@ -44,6 +57,14 @@ export default function Lightbox({ photos, initialIndex, onClose }: Props) {
     if (Math.abs(dx) > 50) dx > 0 ? next() : prev();
   };
 
+  const infoItems = [
+    { label: 'Kích thước', value: formatFileSize(photo.size) },
+    { label: 'Ngày chụp', value: formatDate(photo.uploadedAt) },
+    { label: 'Độ phân giải', value: `${photo.width} × ${photo.height}` },
+    { label: 'Địa điểm', value: location || '—' },
+    { label: 'Người chụp', value: photographerName || '—' },
+  ];
+
   return (
     <div
       className="fixed inset-0 z-[100] bg-black/95 flex flex-col fade-in"
@@ -51,21 +72,39 @@ export default function Lightbox({ photos, initialIndex, onClose }: Props) {
       onTouchEnd={handleTouchEnd}
     >
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/60 backdrop-blur-sm flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-300 dark:text-gray-600 hover:text-white hover:bg-white/10 transition-colors">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <div className="flex items-start justify-between gap-4 px-4 sm:px-5 py-3.5 bg-black/60 backdrop-blur-sm flex-shrink-0">
+        <div className="min-w-0">
+          <button onClick={onClose} className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-1 sm:hidden">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </button>
-          <p className="text-white/90 text-sm font-medium truncate max-w-[200px]">{photo.name}</p>
+          <p className="text-white font-semibold text-base truncate max-w-[60vw]">{photo.name}</p>
+          <p className="text-gray-400 text-xs mt-0.5">{index + 1} / {photos.length}</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-gray-400 dark:text-gray-500 text-sm">{index + 1} / {photos.length}</span>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Select toggle */}
+          <button
+            onClick={() => onToggleSelect(photo.id)}
+            className={`hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-medium transition-colors ${
+              isSelected ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white hover:bg-white/10'
+            }`}
+            title={isSelected ? 'Bỏ chọn ảnh này' : 'Chọn ảnh này'}
+          >
+            {isSelected ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            ) : (
+              <div className="w-3.5 h-3.5 rounded-[3px] border-2 border-current" />
+            )}
+            {isSelected ? 'Đã chọn' : 'Chọn'}
+          </button>
+
           <button
             onClick={() => setShowInfo((v) => !v)}
-            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${showInfo ? 'bg-white/20 text-white' : 'text-gray-400 dark:text-gray-500 hover:text-white hover:bg-white/10'}`}
+            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${showInfo ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
             title="Thông tin ảnh (i)"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -73,34 +112,54 @@ export default function Lightbox({ photos, initialIndex, onClose }: Props) {
               <path d="M12 16v-4M12 8h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </button>
-          <button
-            onClick={() => setZoomed((v) => !v)}
-            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${zoomed ? 'bg-white/20 text-white' : 'text-gray-400 dark:text-gray-500 hover:text-white hover:bg-white/10'}`}
-            title="Zoom"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
-              {zoomed
-                ? <path d="m21 21-4.35-4.35M8 11h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                : <path d="m21 21-4.35-4.35M11 8v6M8 11h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              }
-            </svg>
-          </button>
+
+          <div className="hidden sm:flex items-center">
+            <button
+              onClick={zoomOut}
+              disabled={zoomStep === 0}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+              title="Thu nhỏ (-)"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+                <path d="m21 21-4.35-4.35M8 11h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+            <button
+              onClick={zoomIn}
+              disabled={zoomStep === ZOOM_LEVELS.length - 1}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+              title="Phóng to (+)"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+                <path d="m21 21-4.35-4.35M11 8v6M8 11h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+
           <a
             href={photo.url}
             download={photo.name}
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 dark:text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
+            className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
             title="Tải xuống"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
               <path d="M12 3v13M8 12l4 4 4-4M3 21h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
+            <span className="hidden sm:inline">Tải về</span>
           </a>
+
+          <button onClick={onClose} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
         </div>
       </div>
 
       {/* Main photo area */}
-      <div className="flex-1 flex items-center justify-center relative overflow-hidden min-h-0">
+      <div className="flex-1 flex items-center justify-center relative overflow-auto min-h-0">
         {/* Prev */}
         {index > 0 && (
           <button
@@ -115,16 +174,18 @@ export default function Lightbox({ photos, initialIndex, onClose }: Props) {
 
         {/* Photo */}
         <div
-          className={`transition-all duration-300 max-w-full max-h-full ${zoomed ? 'cursor-zoom-out overflow-auto' : 'cursor-zoom-in'}`}
-          onClick={() => setZoomed((v) => !v)}
-          style={{ maxWidth: zoomed ? '100%' : '100%', maxHeight: '100%' }}
+          className={`transition-all duration-300 ${zoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
+          onClick={() => (zoomed ? setZoomStep(0) : zoomIn())}
         >
           <img
             key={photo.id}
             src={photo.url}
             alt={photo.name}
-            className={`max-w-full max-h-full object-contain transition-transform duration-300 ${zoomed ? 'scale-150' : 'scale-100'}`}
-            style={{ maxHeight: 'calc(100vh - 220px)' }}
+            className="max-w-full object-contain transition-transform duration-300"
+            style={{
+              maxHeight: 'calc(100vh - 220px)',
+              transform: `scale(${ZOOM_LEVELS[zoomStep]})`,
+            }}
             draggable={false}
           />
         </div>
@@ -140,26 +201,21 @@ export default function Lightbox({ photos, initialIndex, onClose }: Props) {
             </svg>
           </button>
         )}
-
-        {/* Info panel */}
-        {showInfo && (
-          <div className="absolute right-4 bottom-4 top-4 w-56 bg-black/70 backdrop-blur-md rounded-2xl p-4 flex flex-col gap-3 slide-right overflow-y-auto no-scrollbar">
-            <p className="text-white font-semibold text-sm">{photo.name}</p>
-            <div className="space-y-2.5">
-              {[
-                { label: 'Kích thước', value: formatFileSize(photo.size) },
-                { label: 'Độ phân giải', value: `${photo.width} × ${photo.height}` },
-                { label: 'Ngày upload', value: formatDate(photo.uploadedAt) },
-              ].map(({ label, value }) => (
-                <div key={label}>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs">{label}</p>
-                  <p className="text-white text-sm mt-0.5">{value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Bottom info bar */}
+      {showInfo && (
+        <div className="flex-shrink-0 bg-black/60 backdrop-blur-sm border-t border-white/10 px-4 sm:px-6 py-3 slide-up">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-2 max-w-screen-lg mx-auto justify-center sm:justify-start">
+            {infoItems.map(({ label, value }) => (
+              <div key={label} className="min-w-0">
+                <p className="text-gray-400 text-[11px]">{label}</p>
+                <p className="text-white text-sm mt-0.5 truncate max-w-[160px]">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Thumbnail strip */}
       <div className="flex-shrink-0 bg-black/60 backdrop-blur-sm px-4 py-3">
@@ -170,8 +226,8 @@ export default function Lightbox({ photos, initialIndex, onClose }: Props) {
           {photos.map((ph, i) => (
             <button
               key={ph.id}
-              onClick={() => { setZoomed(false); setIndex(i); }}
-              className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+              onClick={() => { setZoomStep(0); setIndex(i); }}
+              className={`relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
                 i === index ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-80'
               }`}
             >
@@ -180,6 +236,13 @@ export default function Lightbox({ photos, initialIndex, onClose }: Props) {
                 alt={ph.name}
                 className="w-full h-full object-cover"
               />
+              {selected.has(ph.id) && (
+                <div className="absolute top-1 left-1 w-3.5 h-3.5 rounded-[3px] bg-blue-600 flex items-center justify-center">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              )}
             </button>
           ))}
         </div>

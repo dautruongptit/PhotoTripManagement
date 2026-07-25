@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AppView, StoragePlan, TravelEvent, ToastItem, Photo, User } from './types';
-import { mockUser,mockEvents } from './mockData';
+import { mockUser,mockEvents, storagePlans } from './mockData';
 import { generateId, formatTotalSize, FREE_STORAGE_BYTES } from './utils';
 import { useTheme } from './hooks/useTheme';
 import { useHistoryNavigation } from './hooks/useHistoryNavigation';
 import { getToken } from './lib/apiClient';
 import { fetchCurrentUser, logout as apiLogout } from './lib/authApi';
+import { verifyVnpayReturn, readPendingOrder, clearPendingOrder, isMockPaymentMode, type VnpayReturnResult } from './lib/paymentApi';
 
 import LoginPage from './components/LoginPage';
 import Header from './components/Header';
@@ -13,11 +14,11 @@ import Dashboard from './components/Dashboard';
 import CreateEventModal from './components/CreateEventModal';
 import AlbumPage from './components/AlbumPage';
 import HelpPage from './components/HelpPage';
-import Lightbox from './components/Lightbox';
 import UploadModal from './components/UploadModal';
 import ProfileModal from './components/ProfileModal';
 import SettingsModal from './components/SettingsModal';
 import UpgradeModal from './components/UpgradeModal';
+import VnpayCheckoutModal from './components/VnpayCheckoutModal';
 import Footer from './components/Footer';
 import Toast from './components/Toast';
 
@@ -28,12 +29,12 @@ export default function App() {
   const [view, setView] = useState<AppView>('login');
   const [events, setEvents] = useState<TravelEvent[]>(mockEvents);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [lightboxPhotoId, setLightboxPhotoId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [checkoutPlan, setCheckoutPlan] = useState<StoragePlan | null>(null);
   const [storageLimitBytes, setStorageLimitBytes] = useState(FREE_STORAGE_BYTES);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,10 +93,37 @@ export default function App() {
 
   const removeToast = (id: string) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
+  // Xử lý VNPay chuyển hướng về app (chỉ xảy ra ở chế độ "real" — chế độ mock xử lý
+  // ngay trong VnpayCheckoutModal, không cần rời trang).
+  useEffect(() => {
+    if (isMockPaymentMode) return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('vnp_ResponseCode')) return;
+
+    verifyVnpayReturn(window.location.search)
+      .then((result) => {
+        const pending = readPendingOrder();
+        const plan = storagePlans.find((p) => p.id === (result.planId ?? pending?.planId));
+        if (result.success && plan) {
+          setStorageLimitBytes(plan.storageGB * 1024 * 1024 * 1024);
+          addToast('success', `Thanh toán VNPay thành công! Đã nâng cấp gói ${plan.label} — ${plan.storageGB}GB. Mã GD: ${result.transactionNo ?? result.orderId}.`);
+        } else {
+          addToast('error', result.message || 'Thanh toán không thành công. Vui lòng thử lại.');
+        }
+        clearPendingOrder();
+      })
+      .catch(() => addToast('error', 'Không thể xác nhận kết quả thanh toán. Vui lòng liên hệ hỗ trợ nếu đã bị trừ tiền.'))
+      .finally(() => {
+        // Dọn query string VNPay khỏi URL để tránh xử lý lại khi F5
+        window.history.replaceState({}, '', window.location.pathname);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleLogin = () => {
     setUser(mockUser);
     setView('dashboard');
-    //replace({ view: 'dashboard' }); // ghi đè entry "login", back sẽ không quay lại màn login
+    replace({ view: 'dashboard' }); // ghi đè entry "login", back sẽ không quay lại màn login
     addToast('success', `Xin chào, ${mockUser.name}! Đăng nhập thành công.`);
   };
 
@@ -132,10 +160,13 @@ export default function App() {
     addToast('success', 'Đã cập nhật tên hiển thị.');
   };
 
-  const handleSelectPlan = (plan: StoragePlan) => {
+  const handleSelectPlan = (plan: StoragePlan, result: VnpayReturnResult) => {
     setStorageLimitBytes(plan.storageGB * 1024 * 1024 * 1024);
-    setShowUpgradeModal(false);
-    addToast('success', `Đã nâng cấp gói ${plan.label} — ${plan.storageGB}GB lưu trữ!`);
+    setCheckoutPlan(null);
+    addToast(
+      'success',
+      `Thanh toán VNPay thành công! Đã nâng cấp gói ${plan.label} — ${plan.storageGB}GB lưu trữ. Mã giao dịch: ${result.transactionNo}.`
+    );
   };
 
   const handleCreateEvent = (event: TravelEvent) => {
@@ -168,12 +199,6 @@ export default function App() {
   };
 
   const selectedEvent = selectedEventId ? events.find((e) => e.id === selectedEventId) : null;
-
-  // Lightbox data
-  const lightboxPhotos = selectedEvent?.photos ?? [];
-  const lightboxIndex = lightboxPhotoId
-    ? lightboxPhotos.findIndex((p) => p.id === lightboxPhotoId)
-    : -1;
 
   if (checkingSession) {
     return (
@@ -224,7 +249,6 @@ export default function App() {
                 user={user}
                 searchQuery={searchQuery}
                 onBack={handleGoHome}
-                onOpenPhoto={(photoId) => setLightboxPhotoId(photoId)}
                 onUpload={() => {
                   if (!user) { addToast('warning', 'Vui lòng đăng nhập để tải ảnh lên.'); return; }
                   if (storageUsedBytes >= storageLimitBytes) {
@@ -290,15 +314,18 @@ export default function App() {
           usedBytes={storageUsedBytes}
           limitBytes={storageLimitBytes}
           onClose={() => setShowUpgradeModal(false)}
-          onSelectPlan={handleSelectPlan}
+          onProceedToCheckout={(plan) => {
+            setShowUpgradeModal(false);
+            setCheckoutPlan(plan);
+          }}
         />
       )}
 
-      {lightboxPhotoId && lightboxIndex >= 0 && (
-        <Lightbox
-          photos={lightboxPhotos}
-          initialIndex={lightboxIndex}
-          onClose={() => setLightboxPhotoId(null)}
+      {checkoutPlan && (
+        <VnpayCheckoutModal
+          plan={checkoutPlan}
+          onCancel={() => setCheckoutPlan(null)}
+          onSuccess={handleSelectPlan}
         />
       )}
 

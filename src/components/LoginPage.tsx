@@ -1,3 +1,9 @@
+import { useCallback, useState } from 'react';
+import { useGoogleSignInButton } from '../hooks/useGoogleSignInButton';
+import { loginWithGoogle } from '../lib/authApi';
+import { ApiError } from '../lib/apiClient';
+import type { User } from '../types';
+
 interface Props {
   onLogin: () => void;
   theme: 'light' | 'dark';
@@ -5,6 +11,29 @@ interface Props {
 }
 
 export default function LoginPage({ onLogin, theme, onToggleTheme }: Props) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCredential = useCallback(
+    async (idToken: string) => {
+      setError(null);
+      setLoading(true);
+      try {
+        const user = await loginWithGoogle(idToken);
+        onLogin();
+      } catch (err) {
+        const message =
+          err instanceof ApiError ? err.message : 'Không thể kết nối tới máy chủ. Vui lòng thử lại.';
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [onLogin]
+  );
+
+  const googleButtonRef = useGoogleSignInButton({ onCredential: handleCredential, disabled: loading });
+
   return (
     <div className="min-h-screen flex relative">
       {/* Theme toggle */}

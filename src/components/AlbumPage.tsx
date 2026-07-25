@@ -1,13 +1,13 @@
 import { useState, useMemo, useRef } from 'react';
 import type { TravelEvent, User, Photo, SortOption } from '../types';
 import { formatFileSize, formatDate, formatDateRange } from '../utils';
+import Lightbox from './Lightbox';
 
 interface Props {
   event: TravelEvent;
   user: User | null;
   searchQuery: string;
   onBack: () => void;
-  onOpenPhoto: (photoId: string) => void;
   onUpload: () => void;
   onDeletePhotos: (ids: string[]) => void;
 }
@@ -19,12 +19,13 @@ const SORT_LABELS: Record<SortOption, string> = {
   'name-za': 'Tên Z–A',
 };
 
-export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhoto, onUpload, onDeletePhotos }: Props) {
+export default function AlbumPage({ event, user, searchQuery, onBack, onUpload, onDeletePhotos }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<SortOption>('newest');
   const [filterQuery, setFilterQuery] = useState('');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const sortRef = useRef<HTMLDivElement>(null);
 
   const q = filterQuery || searchQuery;
@@ -222,13 +223,13 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
           </div>
         ) : (
           <div className="photo-masonry">
-            {photos.map((photo) => (
+            {photos.map((photo, i) => (
               <PhotoItem
                 key={photo.id}
                 photo={photo}
                 selected={selected.has(photo.id)}
                 onSelect={() => toggleSelect(photo.id)}
-                onClick={() => onOpenPhoto(photo.id)}
+                onClick={() => setLightboxIndex(i)}
               />
             ))}
           </div>
@@ -237,41 +238,56 @@ export default function AlbumPage({ event, user, searchQuery, onBack, onOpenPhot
 
       {/* Floating selection toolbar */}
       {selected.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl slide-up">
-          <span className="text-sm font-medium">
-            Đã chọn: <strong>{selected.size} ảnh</strong>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 bg-gray-900 dark:bg-gray-800 text-white pl-4 pr-2 py-2 rounded-2xl shadow-2xl slide-up">
+          <span className="text-sm font-medium pr-3">
+            <strong>{selected.size}</strong> ảnh đã chọn
           </span>
-          <div className="w-px h-5 bg-white/20" />
+          <div className="w-px h-5 bg-white/15" />
+          <button
+            onClick={selected.size === photos.length ? clearSelect : selectAll}
+            className="px-3 py-1.5 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+          >
+            {selected.size === photos.length ? 'Bỏ chọn' : `Chọn tất cả (${photos.length})`}
+          </button>
+          {user && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="px-3 py-1.5 text-sm text-red-400 hover:text-red-300 hover:bg-white/10 rounded-xl transition-colors"
+            >
+              Xóa
+            </button>
+          )}
           <a
             href="#"
             onClick={(e) => e.preventDefault()}
-            className="flex items-center gap-1.5 text-sm text-white/80 hover:text-white transition-colors"
-            title="Tải xuống đã chọn"
+            className="flex items-center gap-1.5 ml-1 px-3.5 py-1.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
               <path d="M12 3v13M8 12l4 4 4-4M3 21h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             Tải xuống
           </a>
-          {user && (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-300 transition-colors"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Xóa
-            </button>
-          )}
           <button
             onClick={clearSelect}
-            className="text-sm text-white/60 hover:text-white transition-colors ml-1"
+            title="Đóng"
+            className="w-8 h-8 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 rounded-xl transition-colors ml-1 flex-shrink-0"
           >
             ×
           </button>
         </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <Lightbox
+          photos={photos}
+          initialIndex={lightboxIndex}
+          location={event.location}
+          photographerName={user?.name}
+          selected={selected}
+          onToggleSelect={toggleSelect}
+          onClose={() => setLightboxIndex(null)}
+        />
       )}
 
       {/* Delete confirmation */}
@@ -308,7 +324,7 @@ interface PhotoItemProps {
 function PhotoItem({ photo, selected, onSelect, onClick }: PhotoItemProps) {
   return (
     <div
-      className={`photo-item relative group cursor-pointer rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+      className={`photo-item relative group cursor-pointer rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 transition-all ${selected ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-950' : ''}`}
       onClick={onClick}
     >
       <img
@@ -318,30 +334,37 @@ function PhotoItem({ photo, selected, onSelect, onClick }: PhotoItemProps) {
         loading="lazy"
       />
       {/* Hover overlay */}
-      <div className={`absolute inset-0 transition-all duration-200 ${selected ? 'bg-blue-600/20' : 'bg-black/0 group-hover:bg-black/30'}`}>
-        {/* Checkbox */}
-        <div
-          className={`absolute top-2 left-2 transition-opacity duration-200 ${selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+      <div className={`absolute inset-0 transition-all duration-200 ${selected ? 'bg-blue-600/10' : 'bg-black/0 group-hover:bg-black/20'}`}>
+        {/* Select badge (top-left) */}
+        <button
           onClick={(e) => { e.stopPropagation(); onSelect(); }}
+          title={selected ? 'Bỏ chọn' : 'Chọn ảnh'}
+          className={`absolute top-2 left-2 w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 shadow-sm ${
+            selected
+              ? 'bg-blue-600 opacity-100 scale-100'
+              : 'bg-white/85 backdrop-blur-sm opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100'
+          }`}
         >
-          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selected ? 'bg-blue-600 border-blue-600' : 'bg-white/80 border-white'}`}>
-            {selected && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-          </div>
-        </div>
-
-        {/* Eye icon */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="white" strokeWidth="2"/>
-              <circle cx="12" cy="12" r="3" stroke="white" strokeWidth="2"/>
+          {selected ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </div>
-        </div>
+          ) : (
+            <div className="w-3.5 h-3.5 rounded-[3px] border-2 border-gray-400" />
+          )}
+        </button>
+
+        {/* Eye icon (top-right) */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onClick(); }}
+          title="Xem ảnh"
+          className="absolute top-2 right-2 w-6 h-6 rounded-md bg-white/85 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-sm"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="#374151" strokeWidth="2"/>
+            <circle cx="12" cy="12" r="3" stroke="#374151" strokeWidth="2"/>
+          </svg>
+        </button>
 
         {/* Bottom info */}
         <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
