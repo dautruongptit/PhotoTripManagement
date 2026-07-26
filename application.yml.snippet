@@ -1,0 +1,45 @@
+# ==== Đây là những gì CẦN SỬA trong application.yml THẬT của bạn (không phải thêm mới,
+# vì backend thật đã có sẵn cấu trúc này) — để chạy được ở local dev với frontend port 8443 ====
+
+server:
+  servlet:
+    # ĐỀ XUẤT: XÓA dòng context-path này đi.
+    # Lý do: mọi Controller (AuthController, EventController...) đã tự có "/api/..."
+    # trong @RequestMapping rồi. Giữ context-path "/api/v1" khiến URL thật thành
+    # "/api/v1/api/auth/me" (2 lần /api), và khiến cookie refresh_token (path="/api/auth")
+    # không được trình duyệt gửi kèm đúng (path không khớp) -> refresh token luôn lỗi.
+    # context-path: /api/v1   <-- XÓA dòng này
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}         # Lấy ở Google Cloud Console > Credentials
+            client-secret: ${GOOGLE_CLIENT_SECRET}  # Client Secret — TUYỆT ĐỐI không lộ ra frontend/git
+            scope: [email, profile]
+
+app:
+  # Đổi thành URL frontend đang chạy lúc dev/test, để backend redirect đúng chỗ
+  # sau khi login Google xong (OAuth2SuccessHandler dùng biến này).
+  frontend-url: ${FRONTEND_URL:http://localhost:8443}
+
+# CORS (trong SecurityConfig.java, bean corsConfigurationSource()) hiện đang
+# hardcode CHỈ "https://app.travelalbum.com". Cần sửa file .java đó (không phải
+# application.yml) để thêm origin dev, vd:
+#   config.setAllowedOrigins(List.of(
+#       "https://app.travelalbum.com",
+#       "http://localhost:8443"
+#   ));
+# Khuyến nghị: đọc danh sách này từ biến môi trường thay vì hardcode, để không phải
+# sửa code mỗi lần đổi domain.
+
+# ==== Phần VNPay — CHƯA có Controller/Service xử lý (application.yml đã có sẵn khối
+# config này nhưng chưa được dùng tới), tham khảo VnpayController.java/VnpayService.java
+# trong thư mục này khi bạn code phần thanh toán ====
+vnpay:
+  tmn-code: "YOUR_TMN_CODE"          # Mã website merchant, VNPay cấp khi đăng ký
+  hash-secret: "YOUR_HASH_SECRET"    # Secret key merchant — tuyệt đối không lộ ra frontend/git
+  pay-url: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"  # Production: https://vnpayment.vn/paymentv2/vpcpay.html
+  return-url: "http://localhost:8443/payment/vnpay-return"       # Trang FE nhận kết quả, đổi thành domain thật lúc deploy
