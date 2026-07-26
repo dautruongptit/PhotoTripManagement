@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AppView, StoragePlan, TravelEvent, ToastItem, Photo, User } from './types';
-import { mockUser,mockEvents, storagePlans } from './mockData';
+import { mockEvents, storagePlans } from './mockData';
 import { generateId, formatTotalSize, FREE_STORAGE_BYTES } from './utils';
 import { useTheme } from './hooks/useTheme';
 import { useHistoryNavigation } from './hooks/useHistoryNavigation';
-import { getToken } from './lib/apiClient';
+import { getToken, setToken, clearToken } from './lib/apiClient';
 import { fetchCurrentUser, logout as apiLogout } from './lib/authApi';
 import { verifyVnpayReturn, readPendingOrder, clearPendingOrder, isMockPaymentMode, type VnpayReturnResult } from './lib/paymentApi';
 
@@ -70,7 +70,39 @@ export default function App() {
   });
 
   // Khôi phục phiên đăng nhập nếu đã có token hợp lệ từ lần trước (F5, mở lại tab)
+  // HOẶC xử lý khi backend redirect về sau khi đăng nhập Google xong:
+  //   {FRONTEND_URL}/oauth2/callback?token=<accessToken>
   useEffect(() => {
+    debugger
+    if (window.location.pathname === '/oauth2/callback') {
+      const token = new URLSearchParams(window.location.search).get('token');
+      // Dọn URL callback về "/" ngay, tránh xử lý lại token khi F5
+      window.history.replaceState({}, '', '/');
+
+      if (!token) {
+        addToast('error', 'Đăng nhập Google thất bại. Vui lòng thử lại.');
+        replace({ view: 'login' });
+        setCheckingSession(false);
+        return;
+      }
+
+      setToken(token);
+      fetchCurrentUser()
+        .then((loggedInUser) => {
+          setUser(loggedInUser);
+          setView('dashboard');
+          replace({ view: 'dashboard' });
+          addToast('success', `Xin chào, ${loggedInUser.name}! Đăng nhập thành công.`);
+        })
+        .catch(() => {
+          clearToken();
+          addToast('error', 'Không thể xác thực tài khoản. Vui lòng đăng nhập lại.');
+          replace({ view: 'login' });
+        })
+        .finally(() => setCheckingSession(false));
+      return;
+    }
+
     const token = getToken();
     if (!token) {
       replace({ view: 'login' });
@@ -119,13 +151,6 @@ export default function App() {
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleLogin = () => {
-    setUser(mockUser);
-    setView('dashboard');
-    replace({ view: 'dashboard' }); // ghi đè entry "login", back sẽ không quay lại màn login
-    addToast('success', `Xin chào, ${mockUser.name}! Đăng nhập thành công.`);
-  };
 
   const handleLogout = () => {
     apiLogout();
@@ -212,7 +237,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
       {/* Login page has its own layout */}
       {view === 'login' ? (
-        <LoginPage onLogin={handleLogin} theme={theme} onToggleTheme={toggleTheme} />
+        <LoginPage theme={theme} onToggleTheme={toggleTheme} />
       ) : (
         <>
           <Header
@@ -324,6 +349,7 @@ export default function App() {
       {checkoutPlan && (
         <VnpayCheckoutModal
           plan={checkoutPlan}
+          customerName={user?.name}
           onCancel={() => setCheckoutPlan(null)}
           onSuccess={handleSelectPlan}
         />

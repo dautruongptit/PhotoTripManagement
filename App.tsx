@@ -73,6 +73,7 @@ export default function App() {
   // HOẶC xử lý khi backend redirect về sau khi đăng nhập Google xong:
   //   {FRONTEND_URL}/oauth2/callback?token=<accessToken>
   useEffect(() => {
+    
     if (window.location.pathname === '/oauth2/callback') {
       const token = new URLSearchParams(window.location.search).get('token');
       // Dọn URL callback về "/" ngay, tránh xử lý lại token khi F5
