@@ -1,8 +1,5 @@
 services:
-  # Frontend (React + Nginx) — build từ Dockerfile trong thư mục này.
-  # Nginx trong container này proxy /api/* sang service "backend" bên dưới
-  # (xem nginx.conf), nên frontend gọi API qua đường dẫn tương đối /api,
-  # không cần biết IP/host thật của backend, và khỏi lo CORS.
+  # Frontend (React + Nginx)
   travel-photo:
     build: .
     container_name: travel-photo-app
@@ -12,29 +9,24 @@ services:
     depends_on:
       - backend
     networks:
-      -shared-network
+      - shared-network
 
-  # Backend Spring Boot của bạn.
-  # TODO: đổi "context" thành đường dẫn thật tới project backend Spring Boot
-  # (vd: nếu backend nằm cùng cấp với travel-photo thì để "../ten-thu-muc-backend").
-  # Backend PHẢI có Dockerfile riêng (build jar rồi chạy bằng JDK/JRE image).
-  # Tên service "backend" phải khớp với "proxy_pass http://backend:8068" trong nginx.conf.
+  # Backend Spring Boot
   backend:
     build:
-      context: ../tripTravel-api    # <-- đổi thành đường dẫn thật tới project backend Spring Boot riêng của bạn
+      context: ../tripTravel-api
       dockerfile: Dockerfile
     container_name: travelPhoto-backend
     restart: unless-stopped
     environment:
-      # TODO: đổi theo cấu hình DB/JWT/Google/VNPay thật của backend bạn
       - SPRING_PROFILES_ACTIVE=docker
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - VNPAY_TMN_CODE=${VNPAY_TMN_CODE:-}
       - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET:-}
     ports:
-      - "9000:8068"   # expose thêm ra host để bạn debug trực tiếp (Postman...), không bắt buộc
+      - "9000:8068"
     networks:
-      -shared-network
+      - shared-network
 
 networks:
   shared-network:
