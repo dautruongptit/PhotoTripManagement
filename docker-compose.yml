@@ -6,27 +6,8 @@ services:
     restart: unless-stopped
     ports:
       - "8080:80"
-    depends_on:
-      - backend
     networks:
-      - shared-network
-
-  # Backend Spring Boot
-  backend:
-    build:
-      context: ../tripTravel-api
-      dockerfile: Dockerfile
-    container_name: travelPhoto-backend
-    restart: unless-stopped
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
-      - VNPAY_TMN_CODE=${VNPAY_TMN_CODE:-}
-      - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET:-}
-    ports:
-      - "9000:8068"
-    networks:
-      - shared-network
+      - shared-network  # Dùng chung network với backend đang chạy
 
 networks:
   shared-network:
