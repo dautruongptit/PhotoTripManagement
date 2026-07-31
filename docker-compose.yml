@@ -5,7 +5,7 @@ services:
     container_name: travel-photo-app
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "8081:80"
     networks:
       - shared-network  # Dùng chung network với backend đang chạy
 
