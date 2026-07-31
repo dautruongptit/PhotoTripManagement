@@ -34,7 +34,7 @@ services:
     ports:
       - "9000:8068"   # expose thêm ra host để bạn debug trực tiếp (Postman...), không bắt buộc
     networks:
-      - shared-network
+      -shared-network
 
 networks:
   shared-network:
