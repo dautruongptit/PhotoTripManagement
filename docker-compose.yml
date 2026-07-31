@@ -12,7 +12,7 @@ services:
     depends_on:
       - backend
     networks:
-      - dev-network
+      -shared-network
 
   # Backend Spring Boot của bạn.
   # TODO: đổi "context" thành đường dẫn thật tới project backend Spring Boot
