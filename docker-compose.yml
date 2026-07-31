@@ -21,7 +21,7 @@ services:
   # Tên service "backend" phải khớp với "proxy_pass http://backend:8068" trong nginx.conf.
   backend:
     build:
-      context: ../travelPhoto-backend    # <-- đổi thành đường dẫn thật tới project backend Spring Boot riêng của bạn
+      context: ../tripTravel-api    # <-- đổi thành đường dẫn thật tới project backend Spring Boot riêng của bạn
       dockerfile: Dockerfile
     container_name: travelPhoto-backend
     restart: unless-stopped
@@ -34,8 +34,8 @@ services:
     ports:
       - "9000:8068"   # expose thêm ra host để bạn debug trực tiếp (Postman...), không bắt buộc
     networks:
-      - dev-network
+      - shared-network
 
 networks:
-  dev-network:
+  shared-network:
     external: true
