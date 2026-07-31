@@ -100,7 +100,7 @@ origin — khỏi cần cấu hình CORS:
 
 ```nginx
 location /api/ {
-    proxy_pass http://travel-photo-backend:8080/api/;   # tên container backend trên dev-network
+    proxy_pass http://travelPhoto-backend:8080/api/;   # tên container backend trên dev-network
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
 }
